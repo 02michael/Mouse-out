@@ -1,0 +1,16 @@
+.follow-section {
+  width: 300px;
+  height: 300px;
+  border: solid 5px var(--color-lilac);
+  border-radius: 15px;
+  overflow: hidden;
+}
+
+.follower {
+  width: 50px;
+  height: 50px;
+  border-radius: 999px;
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+}
