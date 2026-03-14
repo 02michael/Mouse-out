@@ -235,3 +235,204 @@ function updateAttachedDrag(clientX, clientY) {
     }
   }
 }
+
+function beginAttachedDrag(x, y, type, id) {
+  setActive(type, id);
+  draggingAttached = true;
+  draggingDetached = false;
+  resetEdgePullLock();
+  updateAttachedDrag(x, y);
+}
+
+function beginDetachedDrag(x, y, type, id) {
+  setActive(type, id);
+  draggingDetached = true;
+  draggingAttached = false;
+  landed = false;
+
+  dragOffsetX = x - phys.x;
+  dragOffsetY = y - phys.y;
+
+  phys.vx = 0;
+  phys.vy = 0;
+
+  throwSamples = [];
+  addThrowSample(phys.x, phys.y);
+  positionFreeKnob(phys.x, phys.y);
+}
+
+function moveDrag(x, y) {
+  if (draggingAttached && !detached) {
+    updateAttachedDrag(x, y);
+    return;
+  }
+
+  if (draggingDetached && detached) {
+    phys.x = x - dragOffsetX;
+    phys.y = y - dragOffsetY;
+    phys.vx = 0;
+    phys.vy = 0;
+
+    addThrowSample(phys.x, phys.y);
+    positionFreeKnob(phys.x, phys.y);
+  }
+}
+
+function endDrag() {
+  if (draggingDetached && detached) {
+    applyThrowVelocity();
+  }
+  clearPointer();
+}
+
+function findTouchById(touchList, id) {
+  for (let i = 0; i < touchList.length; i++) {
+    if (touchList[i].identifier === id) return touchList[i];
+  }
+  return null;
+}
+
+const supportsPointer = "PointerEvent" in window;
+
+if (supportsPointer) {
+  knob.addEventListener("pointerdown", (e) => {
+    if (detached) return;
+    e.preventDefault();
+    e.stopPropagation();
+    beginAttachedDrag(e.clientX, e.clientY, "pointer", e.pointerId);
+  });
+
+  track.addEventListener("pointerdown", (e) => {
+    if (detached) return;
+    e.preventDefault();
+    beginAttachedDrag(e.clientX, e.clientY, "pointer", e.pointerId);
+  });
+
+  freeKnob.addEventListener("pointerdown", (e) => {
+    if (!detached) return;
+    e.preventDefault();
+    e.stopPropagation();
+    beginDetachedDrag(e.clientX, e.clientY, "pointer", e.pointerId);
+  });
+
+  document.addEventListener("pointermove", (e) => {
+    if (activeInputType !== "pointer" || e.pointerId !== activeId) return;
+    e.preventDefault();
+    moveDrag(e.clientX, e.clientY);
+  });
+
+  document.addEventListener("pointerup", (e) => {
+    if (activeInputType !== "pointer" || e.pointerId !== activeId) return;
+    e.preventDefault();
+    endDrag();
+  });
+
+  document.addEventListener("pointercancel", (e) => {
+    if (activeInputType !== "pointer" || e.pointerId !== activeId) return;
+    e.preventDefault();
+    endDrag();
+  });
+} else {
+  knob.addEventListener(
+    "touchstart",
+    (e) => {
+      if (detached) return;
+      const t = e.changedTouches[0];
+      e.preventDefault();
+      e.stopPropagation();
+      beginAttachedDrag(t.clientX, t.clientY, "touch", t.identifier);
+    },
+    { passive: false }
+  );
+
+  track.addEventListener(
+    "touchstart",
+    (e) => {
+      if (detached) return;
+      const t = e.changedTouches[0];
+      e.preventDefault();
+      beginAttachedDrag(t.clientX, t.clientY, "touch", t.identifier);
+    },
+    { passive: false }
+  );
+
+  freeKnob.addEventListener(
+    "touchstart",
+    (e) => {
+      if (!detached) return;
+      const t = e.changedTouches[0];
+      e.preventDefault();
+      e.stopPropagation();
+      beginDetachedDrag(t.clientX, t.clientY, "touch", t.identifier);
+    },
+    { passive: false }
+  );
+
+  document.addEventListener(
+    "touchmove",
+    (e) => {
+      if (activeInputType !== "touch") return;
+      const t =
+        findTouchById(e.touches, activeId) ||
+        findTouchById(e.changedTouches, activeId);
+      if (!t) return;
+      e.preventDefault();
+      moveDrag(t.clientX, t.clientY);
+    },
+    { passive: false }
+  );
+
+  document.addEventListener(
+    "touchend",
+    (e) => {
+      if (activeInputType !== "touch") return;
+      const t = findTouchById(e.changedTouches, activeId);
+      if (!t) return;
+      e.preventDefault();
+      endDrag();
+    },
+    { passive: false }
+  );
+
+  document.addEventListener(
+    "touchcancel",
+    (e) => {
+      if (activeInputType !== "touch") return;
+      const t = findTouchById(e.changedTouches, activeId);
+      if (!t) return;
+      e.preventDefault();
+      endDrag();
+    },
+    { passive: false }
+  );
+
+  knob.addEventListener("mousedown", (e) => {
+    if (detached || e.button !== 0) return;
+    e.preventDefault();
+    e.stopPropagation();
+    beginAttachedDrag(e.clientX, e.clientY, "mouse", 1);
+  });
+
+  track.addEventListener("mousedown", (e) => {
+    if (detached || e.button !== 0) return;
+    e.preventDefault();
+    beginAttachedDrag(e.clientX, e.clientY, "mouse", 1);
+  });
+
+  freeKnob.addEventListener("mousedown", (e) => {
+    if (!detached || e.button !== 0) return;
+    e.preventDefault();
+    e.stopPropagation();
+    beginDetachedDrag(e.clientX, e.clientY, "mouse", 1);
+  });
+
+  document.addEventListener("mousemove", (e) => {
+    if (activeInputType !== "mouse") return;
+    moveDrag(e.clientX, e.clientY);
+  });
+
+  document.addEventListener("mouseup", (e) => {
+    if (activeInputType !== "mouse" || e.button !== 0) return;
+    endDrag();
+  });
+}
