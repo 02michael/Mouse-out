@@ -199,3 +199,105 @@ button {
   box-shadow: inset 0 2px 6px rgba(255, 255, 255, 0.42),
     inset 0 -4px 8px rgba(0, 0, 0, 0.16);
 }
+
+.knob:active,
+.free-knob:active {
+  cursor: grabbing;
+}
+
+.knob {
+  top: 50%;
+  left: 35%;
+  transform: translate(-50%, -50%);
+  z-index: 5;
+}
+
+.free-knob {
+  position: fixed;
+  left: 0;
+  top: 0;
+  display: none;
+  z-index: 100;
+  pointer-events: auto;
+}
+
+.value {
+  margin-top: 18px;
+  text-align: center;
+  font-size: clamp(1rem, 1.8vw, 1.2rem);
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  color: rgba(255, 255, 255, 0.92);
+  min-height: 1.4em;
+}
+
+.sub {
+  margin-top: 8px;
+  text-align: center;
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.46);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.footer-note {
+  position: fixed;
+  left: 50%;
+  bottom: 18px;
+  transform: translateX(-50%);
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  color: rgba(255, 255, 255, 0.62);
+  text-align: center;
+  pointer-events: none;
+  white-space: nowrap;
+}
+
+@media (max-width: 640px) {
+  :root {
+    --knob-size: 52px;
+  }
+
+  .scene {
+    width: 100vw;
+    padding: 24px 16px 84px;
+  }
+
+  .slider-wrap {
+    width: min(78vw, 420px);
+    margin-inline: auto;
+  }
+
+  .slider-shell {
+    height: 92px;
+  }
+
+  .track {
+    height: 20px;
+  }
+
+  .labels {
+    font-size: 12px;
+    letter-spacing: 0.15em;
+  }
+
+  .value {
+    margin-top: 16px;
+    font-size: 1rem;
+  }
+
+  .sub {
+    font-size: 11px;
+    letter-spacing: 0.06em;
+    max-width: 260px;
+    margin-left: auto;
+    margin-right: auto;
+    line-height: 1.35;
+  }
+
+  .footer-note {
+    font-size: 12px;
+    bottom: 14px;
+  }
+}
