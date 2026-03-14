@@ -7,8 +7,38 @@
     <link rel="stylesheet" href="style.css" />
   </head>
   <body>
-    <div id="bodymovin"></div>
+    <div class="scene">
+      <div class="slider-wrap">
+        <div class="labels">
+          <span>Min</span>
+          <span>Max</span>
+        </div>
 
-    <script src="app.js"></script>
+        <div class="slider-shell">
+          <div class="track" id="track">
+            <div class="fill" id="fill"></div>
+            <div class="end-glow left"></div>
+            <div class="end-glow right"></div>
+            <button
+              type="button"
+              class="knob"
+              id="knob"
+              aria-label="Slider knob"
+            ></button>
+          </div>
+        </div>
+
+        <div class="value" id="valueText">35%</div>
+        <div class="sub">Drag off either end if you feel rebellious</div>
+      </div>
+    </div>
+
+    <button
+      type="button"
+      class="free-knob"
+      id="freeKnob"
+      aria-label="Detached knob"
+    ></button>
+    <div class="footer-note">I may not have read the rules.</div>
   </body>
 </html>
