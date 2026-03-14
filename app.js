@@ -101,3 +101,137 @@ function attachKnobAtX(x) {
   resetEdgePullLock();
   setValue(trackValueFromX(x));
 }
+
+function detachKnob(x, y) {
+  detached = true;
+  landed = false;
+  draggingAttached = false;
+
+  knob.style.display = "none";
+  freeKnob.style.display = "block";
+
+  phys.x = x;
+  phys.y = y;
+  phys.vx = 0;
+  phys.vy = 0;
+
+  dragOffsetX = 0;
+  dragOffsetY = 0;
+
+  positionFreeKnob(phys.x, phys.y);
+  updateValueLabel();
+}
+
+function setActive(type, id) {
+  activeInputType = type;
+  activeId = id;
+}
+
+function clearPointer() {
+  activeInputType = null;
+  activeId = null;
+  draggingAttached = false;
+  draggingDetached = false;
+  resetEdgePullLock();
+}
+
+function addThrowSample(x, y) {
+  const now = performance.now();
+  throwSamples.push({ x, y, t: now });
+
+  const cutoff = now - 120;
+  while (throwSamples.length > 2 && throwSamples[0].t < cutoff) {
+    throwSamples.shift();
+  }
+}
+
+function applyThrowVelocity() {
+  if (throwSamples.length < 2) {
+    phys.vx = 0;
+    phys.vy = 0;
+    return;
+  }
+
+  const first = throwSamples[0];
+  const last = throwSamples[throwSamples.length - 1];
+  const dt = Math.max(16, last.t - first.t);
+  const pxPerFrameFactor = 16.6667 / dt;
+
+  phys.vx = (last.x - first.x) * pxPerFrameFactor;
+  phys.vy = (last.y - first.y) * pxPerFrameFactor;
+
+  phys.vx = clamp(phys.vx, -26, 26);
+  phys.vy = clamp(phys.vy, -26, 26);
+}
+
+function updateAttachedDrag(clientX, clientY) {
+  const rect = getTrackRect();
+  const raw = (clientX - rect.left) / rect.width;
+  setValue(raw);
+
+  const nearLeftEnd = value <= 0.02;
+  const nearRightEnd = value >= 0.98;
+
+  const pulledPastLeft = clientX < rect.left - detachThreshold;
+  const pulledPastRight = clientX > rect.right + detachThreshold;
+
+  const trackCenterY = rect.top + rect.height / 2;
+  const pulledVerticallyAway =
+    Math.abs(clientY - trackCenterY) > detachVerticalThreshold;
+
+  if (!nearLeftEnd && !nearRightEnd) {
+    resetEdgePullLock();
+  }
+
+  if (nearLeftEnd) {
+    if (!edgePullLock || edgePullLock.side !== "left") {
+      edgePullLock = {
+        side: "left",
+        x: clientX,
+        y: clientY
+      };
+    }
+
+    const movedLeftEnough = clientX < edgePullLock.x - detachThreshold * 0.5;
+    const movedAwayEnough =
+      Math.abs(clientY - edgePullLock.y) > detachVerticalThreshold;
+
+    if (
+      pulledPastLeft ||
+      movedLeftEnough ||
+      (pulledVerticallyAway && movedAwayEnough)
+    ) {
+      detachKnob(clientX, clientY);
+      draggingDetached = true;
+      throwSamples = [];
+      addThrowSample(clientX, clientY);
+      resetEdgePullLock();
+      return;
+    }
+  } else if (nearRightEnd) {
+    if (!edgePullLock || edgePullLock.side !== "right") {
+      edgePullLock = {
+        side: "right",
+        x: clientX,
+        y: clientY
+      };
+    }
+
+    const movedRightEnough = clientX > edgePullLock.x + detachThreshold * 0.5;
+    const movedAwayEnough =
+      Math.abs(clientY - edgePullLock.y) > detachVerticalThreshold;
+
+    if (
+      pulledPastRight ||
+      movedRightEnough ||
+      (pulledVerticallyAway && movedAwayEnough)
+    ) {
+      detachKnob(clientX, clientY);
+      draggingDetached = true;
+      throwSamples = [];
+      addThrowSample(clientX, clientY);
+      resetEdgePullLock();
+      return;
+    }
+  }
+}
